@@ -1,0 +1,186 @@
+{
+  "entities": {
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Committee administrator granted RBAC privileges for Banglaar Haat IIT Indore.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "minLength": 3, "maxLength": 160 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "role": { "type": "string", "enum": ["super_admin", "committee_admin"] },
+        "addedBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "role", "addedBy", "createdAt"]
+    },
+    "CulturalEvent": {
+      "title": "CulturalEvent",
+      "description": "Traditional Bengali festival, pujo, or food festival hosted at IIT Indore.",
+      "type": "object",
+      "properties": {
+        "titleBn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "titleEn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "category": { "type": "string", "enum": ["pujo", "food", "cultural"] },
+        "dateBn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "dateEn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "isoDate": { "type": "string", "minLength": 10, "maxLength": 20 },
+        "timeBn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "timeEn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "venueBn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "venueEn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "descriptionBn": { "type": "string", "minLength": 1, "maxLength": 1200 },
+        "descriptionEn": { "type": "string", "minLength": 1, "maxLength": 1200 },
+        "bhogMenuBn": { "type": "string", "minLength": 0, "maxLength": 500 },
+        "bhogMenuEn": { "type": "string", "minLength": 0, "maxLength": 500 },
+        "imageUrl": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "capacity": { "type": "integer" },
+        "registeredCount": { "type": "integer" },
+        "status": { "type": "string", "enum": ["open", "closed", "completed"] },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "titleBn", "titleEn", "category", "dateBn", "dateEn", "isoDate",
+        "timeBn", "timeEn", "venueBn", "venueEn", "descriptionBn", "descriptionEn",
+        "bhogMenuBn", "bhogMenuEn", "imageUrl", "capacity", "registeredCount",
+        "status", "createdBy", "createdAt", "updatedAt"
+      ]
+    },
+    "EventRegistration": {
+      "title": "EventRegistration",
+      "description": "Attendee registration and check-in attendance record for an event (contains PII, restricted to owner and admins).",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "rollNumber": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "department": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "hostel": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "phone": { "type": "string", "minLength": 6, "maxLength": 24 },
+        "email": { "type": "string", "format": "email", "minLength": 3, "maxLength": 160 },
+        "foodPreference": { "type": "string", "enum": ["veg_bhog", "nonveg_feast", "both"] },
+        "guestCount": { "type": "integer" },
+        "volunteerRole": { "type": "string", "enum": ["attendee", "pujo_setup", "bhog_seva", "cultural_program", "alpana_decor"] },
+        "attendanceStatus": { "type": "string", "enum": ["registered", "present", "absent", "cancelled"] },
+        "passCode": { "type": "string", "minLength": 4, "maxLength": 32, "pattern": "^[A-Z0-9\\-]+$" },
+        "isWalkIn": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "eventId", "userId", "fullName", "rollNumber", "department", "hostel",
+        "phone", "email", "foodPreference", "guestCount", "volunteerRole",
+        "attendanceStatus", "passCode", "isWalkIn", "createdAt", "updatedAt"
+      ]
+    },
+    "MemberPublicProfile": {
+      "title": "MemberPublicProfile",
+      "description": "Publicly visible Banglaar Haat member directory card (strictly free of private PII).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "nameBn": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "nameEn": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "roleTitleBn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "roleTitleEn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "committeeTier": { "type": "string", "enum": ["committee", "member", "alumni", "faculty"] },
+        "department": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "batch": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "hometownBn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "hometownEn": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "culturalInterestBn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "culturalInterestEn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "bioBn": { "type": "string", "minLength": 0, "maxLength": 400 },
+        "bioEn": { "type": "string", "minLength": 0, "maxLength": 400 },
+        "avatarUrl": { "type": "string", "minLength": 0, "maxLength": 500 },
+        "membershipStatus": { "type": "string", "enum": ["active", "pending", "alumni"] },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "nameBn", "nameEn", "roleTitleBn", "roleTitleEn", "committeeTier",
+        "department", "batch", "hometownBn", "hometownEn", "culturalInterestBn",
+        "culturalInterestEn", "bioBn", "bioEn", "avatarUrl", "membershipStatus",
+        "isPublic", "createdAt", "updatedAt"
+      ]
+    },
+    "MemberPrivateRecord": {
+      "title": "MemberPrivateRecord",
+      "description": "PII-isolated private contact and chanda (dues) record for a member, accessible only to the member and committee admins.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "minLength": 3, "maxLength": 160 },
+        "phone": { "type": "string", "minLength": 6, "maxLength": 24 },
+        "rollNumber": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "hostel": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "chandaStatus": { "type": "string", "enum": ["paid", "pending", "exempt"] },
+        "notes": { "type": "string", "minLength": 0, "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "email", "phone", "rollNumber", "hostel",
+        "chandaStatus", "notes", "createdAt", "updatedAt"
+      ]
+    },
+    "GalleryItem": {
+      "title": "GalleryItem",
+      "description": "Archival cultural photograph from IIT Indore Bengali festivals and food fests.",
+      "type": "object",
+      "properties": {
+        "titleBn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "titleEn": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "captionBn": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "captionEn": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "category": { "type": "string", "enum": ["kali_pujo", "fanush_lights", "pratima_jatra", "durga_saraswati", "food_fest"] },
+        "yearBn": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "yearEn": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "locationBn": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "locationEn": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "photographer": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "imageUrl": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "isPublic": { "type": "boolean" },
+        "featured": { "type": "boolean" },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "titleBn", "titleEn", "captionBn", "captionEn", "category",
+        "yearBn", "yearEn", "locationBn", "locationEn", "photographer",
+        "imageUrl", "isPublic", "featured", "createdBy", "createdAt", "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Committee admin records used for trusted RBAC lookup."
+    },
+    "/events/{eventId}": {
+      "schema": { "$ref": "#/entities/CulturalEvent" },
+      "description": "Public Bengali festival, pujo, and food festival events at IIT Indore."
+    },
+    "/events/{eventId}/registrations/{regId}": {
+      "schema": { "$ref": "#/entities/EventRegistration" },
+      "description": "Per-event attendee registration and check-in attendance records."
+    },
+    "/memberProfiles/{memberId}": {
+      "schema": { "$ref": "#/entities/MemberPublicProfile" },
+      "description": "Publicly readable Bengali community member profiles without private PII."
+    },
+    "/memberPrivate/{memberId}": {
+      "schema": { "$ref": "#/entities/MemberPrivateRecord" },
+      "description": "Isolated private member contact info, roll numbers, and chanda dues records."
+    },
+    "/galleryItems/{itemId}": {
+      "schema": { "$ref": "#/entities/GalleryItem" },
+      "description": "Curated cultural festival photography archive."
+    }
+  }
+}

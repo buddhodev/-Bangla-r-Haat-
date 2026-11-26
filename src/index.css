@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Noto Serif Bengali', 'Cormorant Garamond', Georgia, serif;
+    --font-body: 'Hind Siliguri', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --surface-paper: #FBF9F5;
+    --surface-ivory: #F4EFE6;
+    --surface-ink: #1C1714;
+    --accent-sindoor: #A61C24;
+    --accent-holud: #B87314;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-body);
+    background-color: var(--surface-paper);
+    color: var(--surface-ink);
+  }
+
+  h1, h2, h3, .font-editorial {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+}
+
+.tabular-nums-bengali {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

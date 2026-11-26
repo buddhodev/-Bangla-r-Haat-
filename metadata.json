@@ -1,0 +1,6 @@
+{
+  "name": "Banglaar Haat — IIT Indore",
+  "description": "The Bengali Cultural Community of IIT Indore celebrating Durga Pujo, Lakshmi Pujo, Kali Pujo, Saraswati Pujo, and Bengali culinary heritage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

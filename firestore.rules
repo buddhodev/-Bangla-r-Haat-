@@ -1,0 +1,417 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Hardened Global Primitives ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'buddhodevghosh@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // --- Entity Validation Blueprints (Synced verbatim with firebase-blueprint.json) ---
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'role', 'addedBy', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'addedBy', 'createdAt']) &&
+        isValidId(data.uid) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120 &&
+        data.role in ['super_admin', 'committee_admin'] &&
+        isValidId(data.addedBy) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidEvent(data) {
+      return data.keys().hasAll([
+          'titleBn', 'titleEn', 'category', 'dateBn', 'dateEn', 'isoDate',
+          'timeBn', 'timeEn', 'venueBn', 'venueEn', 'descriptionBn', 'descriptionEn',
+          'bhogMenuBn', 'bhogMenuEn', 'imageUrl', 'capacity', 'registeredCount',
+          'status', 'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'titleBn', 'titleEn', 'category', 'dateBn', 'dateEn', 'isoDate',
+          'timeBn', 'timeEn', 'venueBn', 'venueEn', 'descriptionBn', 'descriptionEn',
+          'bhogMenuBn', 'bhogMenuEn', 'imageUrl', 'capacity', 'registeredCount',
+          'status', 'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        data.titleBn is string && data.titleBn.size() >= 1 && data.titleBn.size() <= 140 &&
+        data.titleEn is string && data.titleEn.size() >= 1 && data.titleEn.size() <= 140 &&
+        data.category in ['pujo', 'food', 'cultural'] &&
+        data.dateBn is string && data.dateBn.size() >= 1 && data.dateBn.size() <= 80 &&
+        data.dateEn is string && data.dateEn.size() >= 1 && data.dateEn.size() <= 80 &&
+        data.isoDate is string && data.isoDate.size() >= 10 && data.isoDate.size() <= 20 &&
+        data.timeBn is string && data.timeBn.size() >= 1 && data.timeBn.size() <= 80 &&
+        data.timeEn is string && data.timeEn.size() >= 1 && data.timeEn.size() <= 80 &&
+        data.venueBn is string && data.venueBn.size() >= 1 && data.venueBn.size() <= 140 &&
+        data.venueEn is string && data.venueEn.size() >= 1 && data.venueEn.size() <= 140 &&
+        data.descriptionBn is string && data.descriptionBn.size() >= 1 && data.descriptionBn.size() <= 1200 &&
+        data.descriptionEn is string && data.descriptionEn.size() >= 1 && data.descriptionEn.size() <= 1200 &&
+        data.bhogMenuBn is string && data.bhogMenuBn.size() <= 500 &&
+        data.bhogMenuEn is string && data.bhogMenuEn.size() <= 500 &&
+        data.imageUrl is string && data.imageUrl.size() >= 1 && data.imageUrl.size() <= 500 &&
+        data.capacity is int && data.capacity >= 1 && data.capacity <= 5000 &&
+        data.registeredCount is int && data.registeredCount >= 0 && data.registeredCount <= 5000 &&
+        data.status in ['open', 'closed', 'completed'] &&
+        isValidId(data.createdBy) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidRegistration(data) {
+      return data.keys().hasAll([
+          'eventId', 'userId', 'fullName', 'rollNumber', 'department', 'hostel',
+          'phone', 'email', 'foodPreference', 'guestCount', 'volunteerRole',
+          'attendanceStatus', 'passCode', 'isWalkIn', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'eventId', 'userId', 'fullName', 'rollNumber', 'department', 'hostel',
+          'phone', 'email', 'foodPreference', 'guestCount', 'volunteerRole',
+          'attendanceStatus', 'passCode', 'isWalkIn', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.eventId) &&
+        isValidId(data.userId) &&
+        data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120 &&
+        data.rollNumber is string && data.rollNumber.size() >= 2 && data.rollNumber.size() <= 40 &&
+        data.department is string && data.department.size() >= 1 && data.department.size() <= 80 &&
+        data.hostel is string && data.hostel.size() >= 1 && data.hostel.size() <= 80 &&
+        data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 24 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        data.foodPreference in ['veg_bhog', 'nonveg_feast', 'both'] &&
+        data.guestCount is int && data.guestCount >= 0 && data.guestCount <= 5 &&
+        data.volunteerRole in ['attendee', 'pujo_setup', 'bhog_seva', 'cultural_program', 'alpana_decor'] &&
+        data.attendanceStatus in ['registered', 'present', 'absent', 'cancelled'] &&
+        data.passCode is string && data.passCode.size() >= 4 && data.passCode.size() <= 32 && data.passCode.matches('^[A-Z0-9\\-]+$') &&
+        data.isWalkIn is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMemberPublicProfile(data) {
+      return data.keys().hasAll([
+          'userId', 'nameBn', 'nameEn', 'roleTitleBn', 'roleTitleEn', 'committeeTier',
+          'department', 'batch', 'hometownBn', 'hometownEn', 'culturalInterestBn',
+          'culturalInterestEn', 'bioBn', 'bioEn', 'avatarUrl', 'membershipStatus',
+          'isPublic', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId', 'nameBn', 'nameEn', 'roleTitleBn', 'roleTitleEn', 'committeeTier',
+          'department', 'batch', 'hometownBn', 'hometownEn', 'culturalInterestBn',
+          'culturalInterestEn', 'bioBn', 'bioEn', 'avatarUrl', 'membershipStatus',
+          'isPublic', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.nameBn is string && data.nameBn.size() >= 1 && data.nameBn.size() <= 120 &&
+        data.nameEn is string && data.nameEn.size() >= 1 && data.nameEn.size() <= 120 &&
+        data.roleTitleBn is string && data.roleTitleBn.size() >= 1 && data.roleTitleBn.size() <= 80 &&
+        data.roleTitleEn is string && data.roleTitleEn.size() >= 1 && data.roleTitleEn.size() <= 80 &&
+        data.committeeTier in ['committee', 'member', 'alumni', 'faculty'] &&
+        data.department is string && data.department.size() >= 1 && data.department.size() <= 80 &&
+        data.batch is string && data.batch.size() >= 1 && data.batch.size() <= 40 &&
+        data.hometownBn is string && data.hometownBn.size() >= 1 && data.hometownBn.size() <= 80 &&
+        data.hometownEn is string && data.hometownEn.size() >= 1 && data.hometownEn.size() <= 80 &&
+        data.culturalInterestBn is string && data.culturalInterestBn.size() >= 1 && data.culturalInterestBn.size() <= 140 &&
+        data.culturalInterestEn is string && data.culturalInterestEn.size() >= 1 && data.culturalInterestEn.size() <= 140 &&
+        data.bioBn is string && data.bioBn.size() <= 400 &&
+        data.bioEn is string && data.bioEn.size() <= 400 &&
+        data.avatarUrl is string && data.avatarUrl.size() <= 500 &&
+        data.membershipStatus in ['active', 'pending', 'alumni'] &&
+        data.isPublic is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMemberPrivateRecord(data) {
+      return data.keys().hasAll([
+          'userId', 'email', 'phone', 'rollNumber', 'hostel',
+          'chandaStatus', 'notes', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId', 'email', 'phone', 'rollNumber', 'hostel',
+          'chandaStatus', 'notes', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 24 &&
+        data.rollNumber is string && data.rollNumber.size() >= 2 && data.rollNumber.size() <= 40 &&
+        data.hostel is string && data.hostel.size() >= 1 && data.hostel.size() <= 80 &&
+        data.chandaStatus in ['paid', 'pending', 'exempt'] &&
+        data.notes is string && data.notes.size() <= 400 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidGalleryItem(data) {
+      return data.keys().hasAll([
+          'titleBn', 'titleEn', 'captionBn', 'captionEn', 'category',
+          'yearBn', 'yearEn', 'locationBn', 'locationEn', 'photographer',
+          'imageUrl', 'isPublic', 'featured', 'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'titleBn', 'titleEn', 'captionBn', 'captionEn', 'category',
+          'yearBn', 'yearEn', 'locationBn', 'locationEn', 'photographer',
+          'imageUrl', 'isPublic', 'featured', 'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        data.titleBn is string && data.titleBn.size() >= 1 && data.titleBn.size() <= 140 &&
+        data.titleEn is string && data.titleEn.size() >= 1 && data.titleEn.size() <= 140 &&
+        data.captionBn is string && data.captionBn.size() >= 1 && data.captionBn.size() <= 500 &&
+        data.captionEn is string && data.captionEn.size() >= 1 && data.captionEn.size() <= 500 &&
+        data.category in ['kali_pujo', 'fanush_lights', 'pratima_jatra', 'durga_saraswati', 'food_fest'] &&
+        data.yearBn is string && data.yearBn.size() >= 1 && data.yearBn.size() <= 40 &&
+        data.yearEn is string && data.yearEn.size() >= 1 && data.yearEn.size() <= 40 &&
+        data.locationBn is string && data.locationBn.size() >= 1 && data.locationBn.size() <= 120 &&
+        data.locationEn is string && data.locationEn.size() >= 1 && data.locationEn.size() <= 120 &&
+        data.photographer is string && data.photographer.size() >= 1 && data.photographer.size() <= 100 &&
+        data.imageUrl is string && data.imageUrl.size() >= 1 && data.imageUrl.size() <= 500 &&
+        data.isPublic is bool &&
+        data.featured is bool &&
+        isValidId(data.createdBy) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // --- Collection: /admins/{uid} ---
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && isVerifiedUser() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(uid) && isAdmin() && isValidAdminRecord(incoming()) &&
+        incoming().uid == uid &&
+        incoming().addedBy == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if isValidId(uid) && isAdmin() && isValidAdminRecord(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().addedBy == existing().addedBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'role', 'email']);
+      allow delete: if isValidId(uid) && isAdmin();
+    }
+
+    // --- Collection: /events/{eventId} ---
+    match /events/{eventId} {
+      allow get: if isValidId(eventId) && (resource.data.status in ['open', 'closed', 'completed'] || isAdmin());
+      allow list: if resource.data.status in ['open', 'closed', 'completed'] || isAdmin();
+      allow create: if isValidId(eventId) && isAdmin() && isValidEvent(incoming()) &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(eventId) && isVerifiedUser() && isValidEvent(incoming()) &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Tier 1: Committee Admin full management
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'titleBn', 'titleEn', 'category', 'dateBn', 'dateEn', 'isoDate',
+            'timeBn', 'timeEn', 'venueBn', 'venueEn', 'descriptionBn', 'descriptionEn',
+            'bhogMenuBn', 'bhogMenuEn', 'imageUrl', 'capacity', 'registeredCount',
+            'status', 'updatedAt'
+          ])) ||
+          // Tier 2: Member atomic seat reservation (+1) strictly coupled with brand-new registration creation
+          (existing().status == 'open' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['registeredCount', 'updatedAt']) &&
+            incoming().registeredCount == existing().registeredCount + 1 &&
+            incoming().registeredCount <= existing().capacity &&
+            !exists(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid)) &&
+            existsAfter(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid))
+          ) ||
+          // Tier 2: Member atomic seat release (-1) strictly coupled with registered -> cancelled transition
+          (existing().status == 'open' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['registeredCount', 'updatedAt']) &&
+            incoming().registeredCount == existing().registeredCount - 1 &&
+            incoming().registeredCount >= 0 &&
+            get(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid)).data.attendanceStatus == 'registered' &&
+            getAfter(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid)).data.attendanceStatus == 'cancelled'
+          )
+        );
+      allow delete: if isValidId(eventId) && isAdmin();
+
+      // --- Subcollection: /events/{eventId}/registrations/{regId} ---
+      match /registrations/{regId} {
+        allow get: if isValidId(eventId) && isValidId(regId) && isVerifiedUser() && (
+          isAdmin() ||
+          (regId == request.auth.uid && existing().userId == request.auth.uid)
+        );
+        allow list: if isAdmin();
+        allow create: if isValidId(eventId) && isValidId(regId) && isVerifiedUser() &&
+          isValidRegistration(incoming()) &&
+          incoming().eventId == eventId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/events/$(eventId)) && (
+            // Admin walk-in or assisted registration
+            isAdmin() ||
+            // Member self-registration on open event
+            (regId == request.auth.uid &&
+              incoming().userId == request.auth.uid &&
+              incoming().attendanceStatus == 'registered' &&
+              incoming().isWalkIn == false &&
+              get(/databases/$(database)/documents/events/$(eventId)).data.status == 'open'
+            )
+          );
+        allow update: if isValidId(eventId) && isValidId(regId) && isVerifiedUser() &&
+          isValidRegistration(incoming()) &&
+          incoming().eventId == existing().eventId &&
+          incoming().userId == existing().userId &&
+          incoming().passCode == existing().passCode &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time && (
+            // Tier 1: Admin attendance check-in & record updates
+            (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+              'fullName', 'rollNumber', 'department', 'hostel', 'phone', 'email',
+              'foodPreference', 'guestCount', 'volunteerRole', 'attendanceStatus',
+              'isWalkIn', 'updatedAt'
+            ])) ||
+            // Tier 2: Owner updating preferences while still registered (blocked once present/cancelled)
+            (regId == request.auth.uid &&
+              existing().userId == request.auth.uid &&
+              existing().attendanceStatus == 'registered' &&
+              incoming().attendanceStatus == 'registered' &&
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'fullName', 'rollNumber', 'department', 'hostel', 'phone',
+                'foodPreference', 'guestCount', 'volunteerRole', 'updatedAt'
+              ])
+            ) ||
+            // Tier 2: Owner cancelling their own registration
+            (regId == request.auth.uid &&
+              existing().userId == request.auth.uid &&
+              existing().attendanceStatus == 'registered' &&
+              incoming().attendanceStatus == 'cancelled' &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['attendanceStatus', 'updatedAt'])
+            )
+          );
+        allow delete: if isValidId(eventId) && isValidId(regId) && isAdmin();
+      }
+    }
+
+    // --- Collection: /memberProfiles/{memberId} (Public Directory - Zero PII) ---
+    match /memberProfiles/{memberId} {
+      allow get: if isValidId(memberId) && (
+        existing().isPublic == true ||
+        (isVerifiedUser() && existing().userId == request.auth.uid) ||
+        isAdmin()
+      );
+      allow list: if resource.data.isPublic == true || isAdmin();
+      allow create: if isValidId(memberId) && isVerifiedUser() &&
+        isValidMemberPublicProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (memberId == request.auth.uid &&
+            incoming().userId == request.auth.uid &&
+            incoming().committeeTier == 'member' &&
+            incoming().membershipStatus == 'pending' &&
+            incoming().roleTitleEn == 'Member' &&
+            incoming().roleTitleBn == 'সদস্য'
+          )
+        );
+      allow update: if isValidId(memberId) && isVerifiedUser() &&
+        isValidMemberPublicProfile(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Tier 1: Committee Admin managing membership approvals & titles
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'nameBn', 'nameEn', 'roleTitleBn', 'roleTitleEn', 'committeeTier',
+            'department', 'batch', 'hometownBn', 'hometownEn', 'culturalInterestBn',
+            'culturalInterestEn', 'bioBn', 'bioEn', 'avatarUrl', 'membershipStatus',
+            'isPublic', 'updatedAt'
+          ])) ||
+          // Tier 2: Member editing personal public details only (no role/status escalation)
+          (memberId == request.auth.uid &&
+            existing().userId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'nameBn', 'nameEn', 'department', 'batch', 'hometownBn', 'hometownEn',
+              'culturalInterestBn', 'culturalInterestEn', 'bioBn', 'bioEn',
+              'avatarUrl', 'isPublic', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isValidId(memberId) && isAdmin();
+    }
+
+    // --- Collection: /memberPrivate/{memberId} (PII Isolated - Owner & Admin Only) ---
+    match /memberPrivate/{memberId} {
+      allow get: if isValidId(memberId) && isVerifiedUser() && (
+        (memberId == request.auth.uid && existing().userId == request.auth.uid) ||
+        isAdmin()
+      );
+      allow list: if isAdmin();
+      allow create: if isValidId(memberId) && isVerifiedUser() &&
+        isValidMemberPrivateRecord(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (memberId == request.auth.uid &&
+            incoming().userId == request.auth.uid &&
+            incoming().chandaStatus == 'pending' &&
+            incoming().notes == ''
+          )
+        );
+      allow update: if isValidId(memberId) && isVerifiedUser() &&
+        isValidMemberPrivateRecord(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Tier 1: Admin updating chanda dues and notes
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'email', 'phone', 'rollNumber', 'hostel', 'chandaStatus', 'notes', 'updatedAt'
+          ])) ||
+          // Tier 2: Member updating own contact details only
+          (memberId == request.auth.uid &&
+            existing().userId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'email', 'phone', 'rollNumber', 'hostel', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isValidId(memberId) && isAdmin();
+    }
+
+    // --- Collection: /galleryItems/{itemId} ---
+    match /galleryItems/{itemId} {
+      allow get: if isValidId(itemId) && (existing().isPublic == true || isAdmin());
+      allow list: if resource.data.isPublic == true || isAdmin();
+      allow create: if isValidId(itemId) && isAdmin() && isValidGalleryItem(incoming()) &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(itemId) && isAdmin() && isValidGalleryItem(incoming()) &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'titleBn', 'titleEn', 'captionBn', 'captionEn', 'category',
+          'yearBn', 'yearEn', 'locationBn', 'locationEn', 'photographer',
+          'imageUrl', 'isPublic', 'featured', 'updatedAt'
+        ]);
+      allow delete: if isValidId(itemId) && isAdmin();
+    }
+  }
+}
